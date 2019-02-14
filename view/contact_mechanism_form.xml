@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- This file is part of contract_nube.  The COPYRIGHT file at the top level of
+this repository contains the full copyright notices and license terms. -->
+<data>
+    <xpath
+        expr="/form/group[@id='checkboxes']"
+        position="inside">
+        <label name="administration_email"/>
+        <field name="administration_email"
+            xexpand="0" width="25"/>
+    </xpath>
+</data>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The COPYRIGHT file at the top level of this repository contains the full
+     copyright notices and license terms. -->
+<tryton>
+    <data>
+        <record model="ir.action.wizard" id="act_send_invoice">
+            <field name="name">Send Invoice</field>
+            <field name="model">account.invoice</field>
+            <field name="wiz_name">account_invoice_send_mail.send_invoice</field>
+        </record>
+        <record model="ir.action.keyword" id="act_send_invoice_keyword">
+            <field name="keyword">form_action</field>
+            <field name="model">account.invoice,-1</field>
+            <field name="action" ref="act_send_invoice"/>
+        </record>
+
+        <record model="ir.ui.view" id="send_invoice_start_view_form">
+            <field name="model">account_invoice_send_mail.send_invoice.start</field>
+            <field name="type">form</field>
+            <field name="name">send_invoice_start_form</field>
+        </record>
+    </data>
+</tryton>
