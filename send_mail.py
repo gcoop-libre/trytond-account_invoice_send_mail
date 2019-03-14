@@ -25,10 +25,11 @@ class SendEmail(object):
         name = name.replace(" ", "").lower()
         return (data, '%s.%s' % (name, type_))
 
-    def send_email(self, invoice, file_data, filename):
+    def send_email(self, invoice, file_data, filename,
+            voucher_data=None, voucher_filename=None):
         "send_email"
 
-        from_addr = 'creditos@lacteoslafarfalla.com.ar'
+        from_addr = invoice.company.party.email
         periodo = invoice.invoice_date.strftime("%m-%Y")
         code = ""
 
@@ -42,7 +43,8 @@ class SendEmail(object):
         code = invoice.party.name
         # creo el mensaje
         outer = MIMEMultipart()
-        outer['Subject'] = 'PONTECORVO HNOS: Factura Electronica'
+        outer['Subject'] = '%s: Factura Electronica' \
+            % invoice.company.party.name
         html = self.get_text_solicitud(code, periodo, invoice)
 
         outer['From'] = from_addr
@@ -63,6 +65,16 @@ class SendEmail(object):
         attachment.add_header("Content-Disposition", "attachment",
             filename=filename)
         outer.attach(attachment)
+
+        if voucher_data:
+            attachment = MIMEBase(maintype, subtype)
+            attachment.set_payload(voucher_data)
+            # Encode the payload using Base64
+            encoders.encode_base64(attachment)
+            # Set the filename parameter
+            attachment.add_header("Content-Disposition", "attachment",
+                filename=voucher_filename)
+            outer.attach(attachment)
         try:
             server = get_smtp_server()
             server.sendmail(from_addr, to_addrs, outer.as_string())
@@ -103,14 +115,11 @@ class SendEmail(object):
                 </table>
                 <p>Adjuntamos la Factura en PDF (Portable Document Format), para
                 poder visualizarla es necesario que tenga un programa instalado.<br />
-                Si no tiene un programa instalado, recomendamos Evince y puede
-                <a
-                href="http://ftp.gnome.org/pub/gnome/binaries/win32/evince/2.32/evince-2.32.0.145.msi">descargarlo
-                desde ac&aacute;.</a><br /></p>
-                <p>Atentamente,</p>
-                <a href="http://www.lacteoslafarfalla.com.ar/">Productos Lacteos La Farfalla</a><br />
+                </p>
+                <p>Atentamente,<br/>
+                 <a href='""" + invoice.company.party.website + """'>""" + invoice.company.party.name + """</a>
                 <p>
-                <h2><hr>Este mensaje ha sido generado en forma autom&aacute;tica y la casilla es utilizada solamente para el env&iacute;o de la informaci&oacute;n solicitada. Por favor no responda este email.</h2>
+                <h2><hr>""" + invoice.company.header + """</h2>
                 </p>
                 </p>
             </body>
