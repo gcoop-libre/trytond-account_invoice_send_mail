@@ -56,20 +56,43 @@ class SendInvoiceReport(Wizard, SendEmail):
             ])
     send_invoice = StateTransition()
 
+    @classmethod
+    def get_voucher(cls, invoice):
+        pool = Pool()
+        Voucher = pool.get('account.voucher')
+        VoucherReport = pool.get('account.voucher', type='report')
+        vouchers = []
+        for payment_line in invoice.payment_lines:
+            if payment_line.origin and payment_line.origin.__class__ == Voucher:
+                vouchers.append(payment_line.origin)
+        type_, data, print_, name = VoucherReport.execute(
+            [vo.id for vo in vouchers], {})
+        name = name.replace(" ", "").lower()
+        return (data, '%s.%s' % (name, type_))
+
     def transition_send_invoice(self):
-        Invoice = Pool().get('account.invoice')
+        pool = Pool()
+        Invoice = pool.get('account.invoice')
+        try:
+            Voucher = pool.get('account.voucher')
+        except KeyError:
+            Voucher = None
+
         invoice = Invoice(Transaction().context['active_id'])
         if invoice:
             if invoice.state not in ['posted', 'paid']:
                 self.raise_user_error('wrong_state', {
                         'state': invoice.state.capitalize(),
                         })
-
             try:
                 logger.info("factura: %s numero: %s customer: %s" %
                     (str(invoice.id), invoice.number, invoice.party.name))
                 (file_data, filename) = self.get_report(invoice)
-                self.send_email(invoice, file_data, filename)
+                voucher_data = voucher_filename = None
+                if Voucher and invoice.state == 'paid' and not invoice.annulled:
+                    (voucher_data, voucher_filename) = self.get_voucher(invoice)
+                self.send_email(invoice, file_data, filename,
+                    voucher_data, voucher_filename)
             except Exception, e:
                 logger.error('error when sending invoice to client %s', str(e),
                     exc_info=True)
